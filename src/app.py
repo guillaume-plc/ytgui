@@ -1,5 +1,5 @@
 """
-A simple wxWidgets app to download youtube videos using the pytube module.
+A simple app to download youtube videos using the pytube module and wxWidgets for the GUI.
 """
 
 import time
@@ -78,7 +78,7 @@ class MainFrame(wx.Frame):
         load_btn.Bind(wx.EVT_BUTTON, self.on_load)
         # Progress bar
         self.progress_bar = wx.Gauge(panel, range=100)
-        # main_sizer.Add((0,25)) # Spacer
+
         h_sizer.Add(load_btn, 0, wx.ALL, 5)
         h_sizer.Add(self.progress_bar, -1, wx.ALL | wx.EXPAND, 5)
         main_sizer.Add(h_sizer, 0, wx.ALL | wx.EXPAND, 5)
@@ -89,7 +89,7 @@ class MainFrame(wx.Frame):
 
         # Setting up the menu.
         menu= wx.Menu()
-        menu.Append(wx.ID_ABOUT, "&About"," Information about this program")
+        menu.Append(wx.ID_ABOUT, "&About"," A simple GUI to quickly download YouTube videos.")
         menu.AppendSeparator()
         menu_exit = menu.Append(wx.ID_EXIT,"E&xit"," Terminate the program")
         self.Bind(wx.EVT_MENU, self.on_exit, menu_exit)
@@ -121,9 +121,7 @@ class MainFrame(wx.Frame):
         """Browse for a directory."""
         del event
         dlg = wx.DirDialog(self, "Choose a directory:",
-                          style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST
-                           #| wx.DD_CHANGE_DIR
-                           )
+                          style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST)
         if dlg.ShowModal() == wx.ID_OK:
             self.save_path = dlg.GetPath()
             self.save_input.SetValue(self.save_path)
@@ -131,7 +129,7 @@ class MainFrame(wx.Frame):
         dlg.Destroy()
 
     def on_exit(self, event):
-        """Closes teh window."""
+        """Closes the window."""
         del event
         self.Close()
 
@@ -142,7 +140,7 @@ class MainFrame(wx.Frame):
         self.progress_bar.SetValue(int((1 - float(bytes_remaining)/size) * 100))
 
     def complete_callback(self, stream, filepath):
-        """Updates progress bar and status after file has been downloaded."""
+        """Updates the progress bar and status after a file has been downloaded."""
         del stream
         self.status_bar.SetStatusText(f" File downloaded to {filepath}")
         self.progress_bar.SetValue(100)
