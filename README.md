@@ -1,3 +1,3 @@
 # ytgui
 
-A simple GUI for quickly downloading youtube videos.
+A simple GUI to quickly download youtube videos.
