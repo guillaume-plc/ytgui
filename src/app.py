@@ -152,8 +152,7 @@ class MainFrame(wx.Frame):
         self.downloading.acquire()
         try:
             self.status_bar.SetStatusText(" Processing URL")
-            self.youtube = YouTube(url, on_progress_callback=self.progress_callback,
-                on_complete_callback=self.complete_callback)
+            self.youtube = YouTube(url, on_progress_callback=self.progress_callback, on_complete_callback=self.complete_callback)
             self.status_bar.SetStatusText(f' Loading "{self.youtube.title}"')
             self.video = self.youtube.streams.filter(progressive=True, file_extension='mp4').first()
             self.video.download(self.save_path)
