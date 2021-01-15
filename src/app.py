@@ -34,7 +34,7 @@ class MainFrame(wx.Frame):
         # Initialize the UI
         self.init_ui()
         # Load the icon
-        self.SetIcon(wx.Icon(path.abspath(path.join(self.basepath, "icon.png"))))
+        self.SetIcon(wx.Icon(path.abspath(path.join(self.basepath, "icon.ico"))))
         self.Show()
 
     def load_settings(self):
