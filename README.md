@@ -16,7 +16,7 @@ The app can be bundled into an executable using pyinstaller (after installing th
 - Install pyinstaller: `pip install pyinstaller`
 
 - Then from the main directory run: 
-`pyinstaller -n ytgui --add-data "src/settings.json;." --add-data "src/icon.ico;." --icon "src/icon.ico" src/app.py`
+`pyinstaller -n ytgui --add-data "src/settings.json;." --add-data "src/icon.ico;." --icon "src/icon.ico" --noconsole src/app.py`
 (The executable will be placed in the dist/ytgui folder, along with necessary files and dlls)
 
 The dist folder contains a bundled version for windows (64 bit).
