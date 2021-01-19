@@ -27,6 +27,8 @@ class MainFrame(wx.Frame):
         self.save_path = ""
         # Wether a directory should be created if the save path is not a valid directory
         self.create_dir = False
+        # Download only audio
+        self.only_audio = False
         
         # Load default settings
         self.load_settings()
@@ -62,6 +64,7 @@ class MainFrame(wx.Frame):
             settings = json.load(file)
             self.save_path = settings["save_path"]
             self.create_dir = settings["create_dir"]
+            self.only_audio = settings["only_audio"]
 
     def update_settings(self, key: str, value: str):
         """Updates the settings file."""
@@ -79,13 +82,15 @@ class MainFrame(wx.Frame):
         grid = wx.FlexGridSizer(3, 5, 5)
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        # Setting up inputs
+        # URL input
         url_label = wx.StaticText(panel, label="URL :")
         self.url_input = wx.TextCtrl(panel, size=(300,-1), style=wx.TE_PROCESS_ENTER)
         self.url_input.Bind(wx.EVT_TEXT_ENTER, self.on_url_input)
+        
         self.load_btn = wx.Button(panel, label="Load")
         self.load_btn.Bind(wx.EVT_BUTTON, self.on_url_input)
-
+        
+        # Save directory input
         save_label = wx.StaticText(panel, label="Save to :")
         self.save_input = wx.TextCtrl(panel, value=self.save_path, style=wx.TE_PROCESS_ENTER)
         self.save_input.Bind(wx.EVT_TEXT_ENTER, self.on_save_input)
@@ -93,27 +98,42 @@ class MainFrame(wx.Frame):
         self.browse_btn = wx.Button(panel, label="Browse")
         self.browse_btn.Bind(wx.EVT_BUTTON, self.on_browse)
         
+        # Video resolution input
         res_label = wx.StaticText(panel, label="Resolution :")
         self.res_input = wx.Choice(panel, choices=["Enter a valid URL"])
         self.res_input.SetSelection(0)
         self.res_input.Disable()
 
+        # Audio bitrate input
         bitrate_label = wx.StaticText(panel, label="Bitrate :")
         self.bitrate_input = wx.Choice(panel, choices=["Enter a valid URL"])
         self.bitrate_input.SetSelection(0)
         self.bitrate_input.Disable()
 
+        # Stream type input
         type_label = wx.StaticText(panel, label="Stream type :")
         type_input = wx.BoxSizer(wx.HORIZONTAL)
+        
         self.progressive = wx.RadioButton(panel, label="progressive", style=wx.RB_GROUP)
         self.adaptive = wx.RadioButton(panel, label="adaptive")
-        type_input.Add(self.progressive, 0, wx.ALL)
-        type_input.Add(self.adaptive, 0, wx.ALL)
         self.progressive.Bind(wx.EVT_RADIOBUTTON, self.on_type_input)
         self.adaptive.Bind(wx.EVT_RADIOBUTTON, self.on_type_input)
+        if self.only_audio:
+            self.progressive.Disable()
+            self.adaptive.Disable()
+            self.adaptive.SetValue(True)
+            self.is_progressive = False
         
-        empty_cell = (0,0)
+        self.audio_input = wx.CheckBox(panel, label="only audio", )
+        self.audio_input.SetValue(self.only_audio)
+        self.audio_input.Bind(wx.EVT_CHECKBOX, self.on_audio_input)
 
+        type_input.Add(self.progressive, 0, wx.ALL)
+        type_input.Add(self.adaptive, 0, wx.ALL)
+        type_input.Add(self.audio_input, 0, wx.ALL)
+
+        # Grid setup
+        empty_cell = (0,0)
         grid.AddMany([(url_label), (self.url_input, 1, wx.EXPAND), (self.load_btn),
                     (save_label), (self.save_input, 1, wx.EXPAND), (self.browse_btn),
                     (res_label), (self.res_input, 1, wx.EXPAND), (empty_cell),
@@ -125,18 +145,20 @@ class MainFrame(wx.Frame):
         # Main load button.
         self.download_btn = wx.Button(panel, label='Download')
         self.download_btn.Bind(wx.EVT_BUTTON, self.on_download)
+        
         # Progress bar
         self.progress_bar = wx.Gauge(panel, range=100)
 
+        # Sizers setup
         h_sizer.Add(self.download_btn, 0, wx.ALL, 5)
         h_sizer.Add(self.progress_bar, -1, wx.ALL | wx.EXPAND, 5)
         main_sizer.Add(h_sizer, 0, wx.ALL | wx.EXPAND, 5)
 
-        # Setting up the status bar
+        # Status bar
         self.status_bar = self.CreateStatusBar(style=wx.BORDER_NONE)
         self.status_bar.SetStatusStyles([wx.SB_FLAT])
 
-        # Setting up the menu.
+        # Menu
         menu = wx.Menu()
         menu.Append(wx.ID_ABOUT, "&About"," A simple GUI to quickly download YouTube videos.")
         self.create_dir_menu = menu.Append(wx.ID_APPLY, "Create directory", " Create a directory if the specified one doesn't exist", kind = wx.ITEM_CHECK)
@@ -146,7 +168,6 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_exit, menu_exit)
         self.Bind(wx.EVT_MENU, self.on_create_dir, self.create_dir_menu)
 
-        # Creating the menubar.
         menu_bar = wx.MenuBar()
         menu_bar.Append(menu,"&Menu") # Adding the "filemenu" to the MenuBar
         self.SetMenuBar(menu_bar)  # Adding the MenuBar to the Frame content.
@@ -200,6 +221,25 @@ class MainFrame(wx.Frame):
             self.res_input.Select(0)
             self.SetStatusText(f" Loaded {self.youtube.title}")
 
+    def on_audio_input(self, event):
+        """Re-filter currently loaded stream and update settings"""
+        self.only_audio = self.audio_input.GetValue()
+        self.update_settings("only_audio", self.only_audio)
+
+        if self.only_audio:
+            self.progressive.Disable()
+            self.adaptive.Disable()
+            self.res_input.Disable()
+            if self.progressive.GetValue():
+                self.adaptive.SetValue(True)
+                self.on_type_input(None)
+                
+        else:
+            self.progressive.Enable()
+            self.adaptive.Enable()
+            if self.streams:
+                self.res_input.Enable()
+
     def update_stream_type(self):
         self.is_progressive = self.progressive.GetValue()
         if self.is_progressive:
@@ -223,7 +263,7 @@ class MainFrame(wx.Frame):
             self.res_input.Clear()
             self.res_input.AppendItems([e.resolution for e in self.vstreams])
             self.res_input.Select(0)
-            self.res_input.Enable()
+            if not self.only_audio: self.res_input.Enable()
 
             self.bitrate_input.Clear()
             self.bitrate_input.AppendItems([str(e.abr) + " - " + str(e.subtype) for e in self.astreams])
@@ -262,7 +302,11 @@ class MainFrame(wx.Frame):
             if self.loading.locked():
                 self.SetStatusText(' A video or URL is already loading')
             elif self.streams:
-                download_thread = Thread(target=self.download_video, args=(value,), daemon=True)
+                if self.only_audio:
+                    target = self.download_audio
+                else:
+                    target = self.download_video
+                download_thread = Thread(target=target, args=(value,), daemon=True)
                 download_thread.start()
             else:
                 self.SetStatusText(' Please load the URL data before downloading')
@@ -286,8 +330,8 @@ class MainFrame(wx.Frame):
 
     def progress_callback(self, stream, chunk, bytes_remaining):
         """Updates the progress bar."""
-        del stream, chunk
-        size = self.video.filesize
+        del chunk
+        size = stream.filesize
         self.progress_bar.SetValue(int((1 - float(bytes_remaining)/size) * 100))
     
     def ffmpeg_progress_callback(self, time_elapsed, duration):
@@ -329,7 +373,7 @@ class MainFrame(wx.Frame):
         which is fine, but looks shady.
         """
         
-        p = re.compile('time=\d+:\d+:\d+\.\d+') # The time info we are looking for
+        pattern = re.compile(r'time=\d+:\d+:\d+\.\d+') # The time info we are looking for
         last_time = 0
         last_data = ""
         while True:
@@ -341,7 +385,7 @@ class MainFrame(wx.Frame):
             
            
             match = []
-            for m in p.finditer(data):
+            for m in pattern.finditer(data):
                 match.append(m)
 
             if match:
@@ -386,6 +430,7 @@ class MainFrame(wx.Frame):
             if not self.is_progressive:
                 video_prefix = "video_"
             self.video.download(self.save_path, filename_prefix=video_prefix)
+            
             if not self.is_progressive:
                 self.SetStatusText(" Downloading audio")
                 self.audio = self.astreams[self.bitrate_input.GetSelection()]
@@ -415,6 +460,26 @@ class MainFrame(wx.Frame):
             self.loading.release()
         return True
 
+    def download_audio(self, url):
+        """Downloads the audio of the requested youtube video and converts it to mp3 using ffmpeg"""
+        self.loading.acquire()
+        try:
+            self.SetStatusText(f' Downloading audio')
+            self.audio = self.astreams[self.bitrate_input.GetSelection()]
+            self.audio.download(self.save_path)
+        except exceptions.RegexMatchError:
+            self.SetStatusText(f" The Regex pattern did not return any match for the video : {url}")
+        except (exceptions.VideoUnavailable, exceptions.VideoPrivate):
+            self.SetStatusText(" The video is unavailable or private.")
+        except exceptions.HTMLParseError:
+            self.SetStatusText(" The HTML could not be parsed.")
+        except exceptions.PytubeError as e:
+            self.SetStatusText(f" Download failed: {e}")
+        except KeyError as e:
+            self.SetStatusText(f" Key Error: {e}. The provided url is probably invalid.")
+        finally:
+            self.loading.release()
+        return True
 if __name__ == '__main__':
     app = wx.App()
     frame = MainFrame()
