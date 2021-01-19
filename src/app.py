@@ -6,6 +6,7 @@ import time
 import json
 import os
 import re
+import subprocess
 from threading import Thread, Lock
 
 import wx
@@ -227,7 +228,7 @@ class MainFrame(wx.Frame):
             self.bitrate_input.Clear()
             self.bitrate_input.AppendItems([str(e.abr) + " - " + str(e.subtype) for e in self.astreams])
             self.bitrate_input.Select(0)
-            self.bitrate_input.Enable()
+            if not self.is_progressive: self.bitrate_input.Enable()
 
             self.progressive.Enable()
             self.adaptive.Enable()
@@ -297,7 +298,22 @@ class MainFrame(wx.Frame):
         video = ffmpeg.input(video_path).video
         duration = self.get_merge_duration(video_path)
 
-        process = ffmpeg.output(audio, video, outpath, vcodec="copy").global_args("-hide_banner").overwrite_output().run_async(pipe_stderr=True)
+        # Startupinfo to hide console on Windows
+        startupinfo = None
+        if os.name == 'nt':
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+        process = subprocess.Popen(
+            (ffmpeg
+                .output(audio, video, outpath, vcodec="copy")
+                .global_args("-hide_banner")
+                .overwrite_output()
+                .compile()
+            ),
+            stderr=subprocess.PIPE,
+            startupinfo=startupinfo,
+        )
             
         """
         Hacky parsing of ffmpeg's stderr to retrieve the time information.
