@@ -2,6 +2,8 @@
 
 A simple GUI to quickly download youtube videos.
 
+![screenshot](screenshot.png)
+
 ## Usage
 
 ### As a python program
