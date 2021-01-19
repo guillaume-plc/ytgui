@@ -4,3 +4,4 @@ pytube @ git+https://github.com/nficano/pytube@8ff1168c03da04dff67eda0bf6b7ea0a0
 six==1.15.0
 typing-extensions==3.7.4.3
 wxPython==4.1.0
+ffmpeg-python==0.2.0
