@@ -2,7 +2,7 @@
 
 A simple GUI to quickly download youtube videos.
 
-![screenshot](screenshot.png)
+![screenshot](screenshot.png =357x200)
 
 ## Usage
 
