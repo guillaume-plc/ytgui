@@ -1,5 +1,7 @@
 {
     "save_path": "C:\\Users\\gppla\\Downloads",
     "create_dir": false,
-    "only_audio": true
+    "convert_audio": true,
+    "only_audio": false,
+    "progressive_stream": true
 }
