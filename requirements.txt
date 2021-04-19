@@ -1,5 +1,5 @@
 numpy==1.19.4
-Pillow==8.0.1
+Pillow>=8.1.1
 pytube @ git+https://github.com/nficano/pytube@8ff1168c03da04dff67eda0bf6b7ea0a017a475a
 six==1.15.0
 typing-extensions==3.7.4.3
